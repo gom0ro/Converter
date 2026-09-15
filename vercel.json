@@ -1,0 +1,17 @@
+{
+  "services": {
+    "converter": {
+      "root": ".",
+      "entrypoint": "backend.main:app"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": {
+        "type": "service",
+        "service": "converter"
+      }
+    }
+  ]
+}
