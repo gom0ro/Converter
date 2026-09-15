@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Конвертер систем счисления</title>
+    <script src="vue.global.prod.js"></script>
+    <style>
+        :root {
+            --accent: #f0db4f;
+            --accent-dark: #e4c92f;
+            --bg: #1a1a24;
+            --panel: rgba(255,255,255,0.06);
+            --border: rgba(255,255,255,0.1);
+            --text: #e8e8f0;
+            --muted: #9a9ab0;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #13131c, #1e1e30, #13131c);
+            min-height: 100vh;
+            color: var(--text);
+        }
+
+        .header {
+            text-align: center;
+            padding: 35px 20px 15px;
+        }
+
+        .header h1 {
+            font-size: 2.2rem;
+            background: linear-gradient(90deg, #f7971e, #ffd200);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 6px;
+        }
+
+        .header p { color: var(--muted); font-size: 0.95rem; }
+
+        [v-cloak] { display: none; }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            justify-content: center;
+            background: var(--panel);
+            padding: 6px;
+            border-radius: 14px;
+            border: 1px solid var(--border);
+        }
+
+        .tab {
+            flex: 1;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 10px;
+            background: transparent;
+            color: var(--muted);
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: all 0.25s;
+            font-weight: 600;
+        }
+
+        .tab:hover { color: var(--text); }
+
+        .tab.active {
+            background: var(--accent);
+            color: #1a1a24;
+            box-shadow: 0 4px 14px rgba(240,219,79,0.3);
+        }
+
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 28px;
+            backdrop-filter: blur(8px);
+        }
+
+        .card h2 {
+            font-size: 1.05rem;
+            color: var(--accent);
+            margin-bottom: 20px;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 14px;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+        @media (max-width: 700px) {
+            .grid-3 { grid-template-columns: 1fr; }
+            .grid-2 { grid-template-columns: 1fr; }
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: rgba(255,255,255,0.07);
+            color: var(--text);
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.25s, box-shadow 0.25s;
+            font-family: inherit;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(240,219,79,0.15);
+        }
+
+        select option { background: #26263a; color: #fff; }
+
+        input.invalid {
+            border-color: #e74c3c;
+            box-shadow: 0 0 0 3px rgba(231,76,60,0.15);
+        }
+
+        .error-msg {
+            color: #ff6b6b;
+            font-size: 0.8rem;
+            margin-top: 6px;
+            min-height: 1em;
+        }
+
+        .result-card {
+            margin-top: 20px;
+            background: rgba(240,219,79,0.08);
+            border: 1px solid rgba(240,219,79,0.3);
+            border-radius: 14px;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .result-card .result-label {
+            color: var(--muted);
+            font-size: 0.85rem;
+            margin-bottom: 6px;
+        }
+
+        .result-card .result-value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            font-family: 'Consolas', 'Courier New', monospace;
+            word-break: break-all;
+            background: linear-gradient(120deg, var(--accent), #ff8c5a);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .result-meta {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 14px;
+            font-size: 0.85rem;
+            color: var(--muted);
+        }
+
+        .steps {
+            margin-top: 16px;
+            text-align: left;
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+            padding: 14px 18px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 0.85rem;
+            line-height: 1.7;
+        }
+
+        .steps .step { padding: 3px 0; }
+
+        .steps .step.tail { color: var(--accent); }
+
+        .btn {
+            width: 100%;
+            margin-top: 18px;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(120deg, var(--accent), var(--accent-dark));
+            color: #1a1a24;
+            font-size: 1.05rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.25s;
+            letter-spacing: 0.3px;
+        }
+
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(240,219,79,0.3); }
+        .btn:active { transform: translateY(0); }
+
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        .spinner {
+            display: none;
+            border: 3px solid rgba(255,255,255,0.15);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            width: 26px;
+            height: 26px;
+            margin: 24px auto;
+            animation: spin 0.8s linear infinite;
+        }
+
+        .spinner.visible { display: block; }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ---- Liquid Glass TabBar ---- */
+        .content {
+            padding-bottom: 110px;
+        }
+
+        .tabbar {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 100;
+            display: flex;
+            justify-content: center;
+            padding: 14px 16px calc(14px + env(safe-area-inset-bottom, 0px));
+            background: rgba(17, 20, 30, 0.45);
+            border-top: 1px solid rgba(255,255,255,0.12);
+            backdrop-filter: blur(36px) saturate(160%);
+            -webkit-backdrop-filter: blur(36px) saturate(160%);
+            box-shadow: 0 -14px 44px rgba(0,0,0,0.38);
+        }
+
+        .tabbar-inner {
+            position: relative;
+            display: flex;
+            gap: 4px;
+            width: 100%;
+            max-width: 680px;
+            padding: 6px;
+            border-radius: 40px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.16), rgba(255,255,255,0.06));
+            border: 1px solid rgba(255,255,255,0.16);
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,0.26),
+                inset 0 -1px 0 rgba(0,0,0,0.18);
+        }
+
+        .tabbar-glow {
+            position: absolute;
+            top: 6px;
+            bottom: 6px;
+            left: 6px;
+            border-radius: 32px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.34), rgba(255,255,255,0.1));
+            border: 1px solid rgba(255,255,255,0.28);
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,0.5),
+                0 6px 20px rgba(0,0,0,0.22);
+            transition: left 0.3s cubic-bezier(0.35, 0.9, 0.4, 1), width 0.3s cubic-bezier(0.35, 0.9, 0.4, 1);
+            z-index: 0;
+        }
+
+        .tabbar-item {
+            position: relative;
+            z-index: 1;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            padding: 10px 6px 8px;
+            border: none;
+            border-radius: 32px;
+            background: transparent;
+            color: var(--muted);
+            cursor: pointer;
+            font-size: 0.72rem;
+            font-weight: 600;
+            transition: color 0.25s, transform 0.15s;
+        }
+
+        .tabbar-item:hover { color: #fff; transform: translateY(-1px); }
+
+        .tabbar-item.active { color: #fff; }
+
+        .tabbar-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.35));
+            transition: transform 0.25s, filter 0.25s;
+        }
+
+        .tabbar-icon svg {
+            display: block;
+        }
+
+        .tabbar-item.active .tabbar-icon {
+            transform: translateY(-2px) scale(1.08);
+            filter: drop-shadow(0 3px 10px rgba(240,219,79,0.6));
+        }
+
+        .tabbar-item:active .tabbar-icon {
+            transform: scale(0.9);
+        }
+
+        .tabbar-label {
+            line-height: 1;
+            letter-spacing: 0.2px;
+        }
+
+        .history {
+            margin-top: 20px;
+        }
+
+        .history h3 {
+            font-size: 0.9rem;
+            color: var(--muted);
+            margin-bottom: 10px;
+        }
+
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 14px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border);
+            margin-bottom: 8px;
+            font-size: 0.88rem;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .history-item:hover { border-color: rgba(240,219,79,0.4); }
+
+        .btn-history-clear {
+            margin-left: 10px;
+            padding: 2px 10px;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 6px;
+            background: transparent;
+            color: var(--muted);
+            font-size: 0.72rem;
+            cursor: pointer;
+            vertical-align: middle;
+            transition: all 0.2s;
+        }
+
+        .btn-history-clear:hover {
+            border-color: #ff6b6b;
+            color: #ff6b6b;
+        }
+
+        .history-item .h-value { font-family: 'Consolas', monospace; }
+
+        .history-item .h-arrow { color: var(--accent); font-weight: 700; }
+
+        .history-item .h-type {
+            font-size: 0.72rem;
+            color: var(--muted);
+            background: rgba(240,219,79,0.1);
+            border: 1px solid rgba(240,219,79,0.25);
+            border-radius: 6px;
+            padding: 2px 8px;
+            margin-left: 10px;
+            white-space: nowrap;
+        }
+
+        .history-item .h-time {
+            font-size: 0.72rem;
+            color: var(--muted);
+            margin-left: auto;
+            font-family: 'Consolas', monospace;
+        }
+
+        .empty-history {
+            text-align: center;
+            padding: 30px 10px;
+            color: var(--muted);
+            font-size: 0.95rem;
+        }
+    </style>
+</head>
+<body>
+
+<div id="app" v-cloak>
+    <div class="header">
+        <h1>Системы счисления</h1>
+    </div>
+
+    <div class="content">
+        <div class="container">
+
+        <!-- ===== CONVERT TAB ===== -->
+        <div v-if="tab === 'convert'">
+            <div class="card">
+                <h2>Перевод числа между системами счисления</h2>
+                <div class="grid-3">
+                    <div>
+                        <label>Число</label>
+                        <input v-model="inputValue" :class="{invalid: convertError}" placeholder="e.g. 1010" @input="clearError">
+                    </div>
+                    <div>
+                        <label>Из системы</label>
+                        <select v-model.number="fromBase">
+                            <option v-for="b in bases" :key="b.base" :value="b.base">
+                                {{ b.base }} — {{ b.name }}
+                            </option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>В систему</label>
+                        <select v-model.number="toBase">
+                            <option v-for="b in bases" :key="b.base" :value="b.base">
+                                {{ b.base }} — {{ b.name }}
+                            </option>
+                        </select>
+                    </div>
+                </div>
+                <div class="error-msg">{{ convertError }}</div>
+                <button class="btn" @click="convert" :disabled="converting">{{ converting ? 'Переводим...' : 'Перевести' }}</button>
+            </div>
+
+            <div class="result-card" v-if="conversionData">
+                <div class="result-label">Результат</div>
+                <div class="result-value">{{ conversionData.result }}</div>
+                <div class="result-meta">
+                    <span>{{ conversionData.input_value }} ({{ conversionData.from_base }}) → {{ conversionData.result }} ({{ conversionData.to_base }})</span>
+                    <span>Десятичное: {{ conversionData.decimal_value }}</span>
+                </div>
+                <div class="steps" v-if="conversionData.steps">
+                    <div class="step" v-for="(s, i) in conversionData.steps" :key="i" :class="{tail: i === conversionData.steps.length - 1}">{{ s }}</div>
+                </div>
+            </div>
+
+            <div class="history" v-if="convertHistory.length">
+                <h3>История конвертаций <button class="btn-history-clear" @click="clearConvertHistory">Очистить</button></h3>
+                <div class="history-item" v-for="(item, i) in convertHistory" :key="i" @click="reuseConversion(item)">
+                    <span class="h-value">{{ item.input }}</span>
+                    <span class="h-arrow">{{ item.from }} → {{ item.to }}</span>
+                    <span class="h-value">{{ item.result }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== CALC TAB ===== -->
+        <div v-if="tab === 'calc'">
+            <div class="card">
+                <h2>Арифметика в любой системе счисления</h2>
+                <div class="grid-3">
+                    <div>
+                        <label>Первое число</label>
+                        <input v-model="calcValue1" placeholder="e.g. FF" :class="{invalid: calcError}">
+                    </div>
+                    <div>
+                        <label>Второе число</label>
+                        <input v-model="calcValue2" placeholder="e.g. 1" :class="{invalid: calcError}">
+                    </div>
+                    <div>
+                        <label>Операция</label>
+                        <select v-model="calcOp">
+                            <option value="add">+ (сложение)</option>
+                            <option value="subtract">− (вычитание)</option>
+                            <option value="multiply">× (умножение)</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="margin-top:14px">
+                    <label>Система счисления</label>
+                    <select v-model.number="calcBase">
+                        <option v-for="b in bases" :key="b.base" :value="b.base">
+                            {{ b.base }} — {{ b.name }}
+                        </option>
+                    </select>
+                </div>
+                <div class="error-msg">{{ calcError }}</div>
+                <button class="btn" @click="calcArithmetic" :disabled="calcRunning">{{ calcRunning ? 'Считаем...' : 'Вычислить' }}</button>
+            </div>
+
+            <div class="result-card" v-if="calcData">
+                <div class="result-label">Результат</div>
+                <div class="result-value">
+                    {{ calcData.result }}
+                    <span style="font-size: 0.8rem; -webkit-text-fill-color: var(--muted)">({{ calcData.base }})</span>
+                </div>
+                <div class="result-meta">
+                    <span>{{ calcData.value1 }} {{ opSymbol(calcData.operation) }} {{ calcData.value2 }} = {{ calcData.result_decimal }} (дес.)</span>
+                    <span>{{ calcData.result }} ({{ calcData.base }})</span>
+                </div>
+            </div>
+
+            <div class="history" v-if="calcHistory.length">
+                <h3>История вычислений <button class="btn-history-clear" @click="clearCalcHistory">Очистить</button></h3>
+                <div class="history-item" v-for="(item, i) in calcHistory" :key="i" @click="reuseCalc(item)">
+                    <span class="h-value">{{ item.exp }}</span>
+                    <span class="h-arrow">=</span>
+                    <span class="h-value">{{ item.result }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== HISTORY TAB ===== -->
+        <div v-if="tab === 'history'">
+            <div class="card">
+                <h2>История действий</h2>
+
+                <div class="empty-history" v-if="!allHistory.length">
+                    Пока нет записей — выполните конвертацию или вычисление.
+                </div>
+
+                <div class="history-item" v-for="(item, i) in allHistory" :key="i" @click="reuseHistory(item)">
+                    <span class="h-value">{{ item.text }}</span>
+                    <span class="h-arrow">{{ item.sub }}</span>
+                    <span class="h-value">{{ item.result }}</span>
+                    <span class="h-type">{{ item.kind }}</span>
+                    <span class="h-time">{{ item.time }}</span>
+                </div>
+
+                <button class="btn" v-if="allHistory.length" @click="clearAllHistory">Очистить всю историю</button>
+            </div>
+        </div>
+    </div>
+        </div>
+
+    <!-- ===== Liquid Glass TabBar ===== -->
+    <nav class="tabbar">
+        <div class="tabbar-inner">
+            <div class="tabbar-glow" ref="tabbarGlow"></div>
+            <button class="tabbar-item" :class="{active: tab === 'convert'}" @click="setTab('convert')">
+                <span class="tabbar-icon">
+                    <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="17 1 21 5 17 9"></polyline>
+                        <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                        <polyline points="7 23 3 19 7 15"></polyline>
+                        <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                    </svg>
+                </span>
+                <span class="tabbar-label">Конвертер</span>
+            </button>
+            <button class="tabbar-item" :class="{active: tab === 'calc'}" @click="setTab('calc')">
+                <span class="tabbar-icon">
+                    <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="4" y="2" width="16" height="20" rx="2"></rect>
+                        <line x1="8" y1="6" x2="16" y2="6"></line>
+                        <line x1="8" y1="10" x2="8" y2="10"></line>
+                        <line x1="12" y1="10" x2="12" y2="10"></line>
+                        <line x1="16" y1="10" x2="16" y2="10"></line>
+                        <line x1="8" y1="14" x2="8" y2="14"></line>
+                        <line x1="12" y1="14" x2="12" y2="14"></line>
+                        <line x1="16" y1="14" x2="16" y2="14"></line>
+                        <line x1="8" y1="18" x2="8" y2="18"></line>
+                        <line x1="12" y1="18" x2="12" y2="18"></line>
+                    </svg>
+                </span>
+                <span class="tabbar-label">Калькулятор</span>
+            </button>
+            <button class="tabbar-item" :class="{active: tab === 'history'}" @click="setTab('history')">
+                <span class="tabbar-icon">
+                    <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                </span>
+                <span class="tabbar-label">История</span>
+            </button>
+        </div>
+    </nav>
+</div>
+
+<script>
+const { createApp } = Vue;
+
+const API_URL = '';
+
+const AVAILABLE_BASES = [
+    { base: 2,  name: "Двоичная",            digits: "01" },
+    { base: 8,  name: "Восьмеричная",        digits: "01234567" },
+    { base: 10, name: "Десятичная",          digits: "0123456789" },
+    { base: 16, name: "Шестнадцатеричная",   digits: "0123456789ABCDEF" },
+];
+
+const LS_KEY_CONVERT = 'numsys_convert_history';
+const LS_KEY_CALC    = 'numsys_calc_history';
+
+createApp({
+    data() {
+        return {
+            tab: 'convert',
+            bases: [],
+            inputValue: '1010',
+            fromBase: 2,
+            toBase: 10,
+            convertError: '',
+            converting: false,
+            conversionData: null,
+            convertHistory: [],
+
+            calcValue1: 'FF',
+            calcValue2: '1',
+            calcBase: 16,
+            calcOp: 'add',
+            calcError: '',
+            calcRunning: false,
+            calcData: null,
+            calcHistory: [],
+        };
+    },
+    computed: {
+        allHistory() {
+            const items = [];
+            this.convertHistory.forEach(h => items.push({
+                type: 'convert',
+                text: h.input,
+                sub: `${h.from} → ${h.to}`,
+                result: h.result,
+                from: h.from,
+                to: h.to,
+                time: h.time || '',
+                kind: 'конвертация',
+            }));
+            this.calcHistory.forEach(h => items.push({
+                type: 'calc',
+                text: h.exp,
+                sub: 'вычисление',
+                result: h.result,
+                time: h.time || '',
+                kind: 'исчисление',
+            }));
+            return items;
+        },
+    },
+    methods: {
+        setTab(tab) {
+            this.tab = tab;
+            this.$nextTick(() => this.moveGlow());
+        },
+        moveGlow() {
+            const glow = document.querySelector('.tabbar-glow');
+            const active = document.querySelector('.tabbar-item.active');
+            if (glow && active) {
+                glow.style.left = active.offsetLeft + 'px';
+                glow.style.width = active.offsetWidth + 'px';
+            }
+        },
+        opSymbol(op) {
+            return { add: '+', subtract: '−', multiply: '×' }[op] || op;
+        },
+        async api(url, payload) {
+            let res;
+            try {
+                res = await fetch(API_URL + url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+            } catch (e) {
+                throw new Error('Ошибка сети — проверьте, что сервер запущен');
+            }
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.detail || 'Ошибка сервера');
+            }
+            return data;
+        },
+        async loadBases() {
+            this.bases = AVAILABLE_BASES;
+            try {
+                const savedConvert = localStorage.getItem(LS_KEY_CONVERT);
+                if (savedConvert) this.convertHistory = JSON.parse(savedConvert);
+                const savedCalc = localStorage.getItem(LS_KEY_CALC);
+                if (savedCalc) this.calcHistory = JSON.parse(savedCalc);
+            } catch (e) { /* ignore corrupted localStorage */ }
+        },
+        clearError() {
+            this.convertError = '';
+        },
+        async convert() {
+            this.convertError = '';
+            if (!this.inputValue.trim()) {
+                this.convertError = 'Введите число';
+                return;
+            }
+            if (this.fromBase === this.toBase) {
+                this.convertError = 'Системы должны отличаться';
+                return;
+            }
+            this.converting = true;
+            try {
+                const data = await this.api('/api/convert', {
+                    value: this.inputValue,
+                    from_base: this.fromBase,
+                    to_base: this.toBase,
+                });
+                this.conversionData = data;
+                this.convertHistory.unshift({
+                    input: data.input_value,
+                    result: data.result,
+                    from: data.from_base,
+                    to: data.to_base,
+                    time: this.nowTime(),
+                });
+                if (this.convertHistory.length > 20) this.convertHistory.pop();
+                localStorage.setItem(LS_KEY_CONVERT, JSON.stringify(this.convertHistory));
+            } catch (e) {
+                this.convertError = e.message;
+            } finally {
+                this.converting = false;
+            }
+        },
+        reuseConversion(item) {
+            this.inputValue = item.input;
+            this.fromBase = item.from;
+            this.toBase = item.to;
+        },
+        async calcArithmetic() {
+            this.calcError = '';
+            if (!this.calcValue1.trim() || !this.calcValue2.trim()) {
+                this.calcError = 'Введите оба числа';
+                return;
+            }
+            this.calcRunning = true;
+            try {
+                const data = await this.api('/api/calculate', {
+                    value1: this.calcValue1,
+                    value2: this.calcValue2,
+                    base: this.calcBase,
+                    operation: this.calcOp,
+                });
+                this.calcData = data;
+                const symbol = this.opSymbol(data.operation);
+                this.calcHistory.unshift({
+                    exp: `${data.value1} ${symbol} ${data.value2}`,
+                    result: data.result,
+                    time: this.nowTime(),
+                });
+                if (this.calcHistory.length > 20) this.calcHistory.pop();
+                localStorage.setItem(LS_KEY_CALC, JSON.stringify(this.calcHistory));
+            } catch (e) {
+                this.calcError = e.message;
+            } finally {
+                this.calcRunning = false;
+            }
+        },
+        reuseCalc(item) {
+            this.calcValue1 = item.exp.split(' ')[0];
+            this.calcValue2 = item.exp.split(' ')[2];
+        },
+        clearConvertHistory() {
+            this.convertHistory = [];
+            localStorage.removeItem(LS_KEY_CONVERT);
+        },
+        clearCalcHistory() {
+            this.calcHistory = [];
+            localStorage.removeItem(LS_KEY_CALC);
+        },
+        nowTime() {
+            const d = new Date();
+            const p = n => String(n).padStart(2, '0');
+            return `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+        },
+        reuseHistory(item) {
+            if (item.type === 'convert') {
+                this.inputValue = item.text;
+                this.fromBase = item.from;
+                this.toBase = item.to;
+                this.tab = 'convert';
+            } else {
+                const parts = item.text.split(' ');
+                this.calcValue1 = parts[0];
+                this.calcValue2 = parts[2];
+                this.tab = 'calc';
+            }
+        },
+        clearAllHistory() {
+            this.convertHistory = [];
+            this.calcHistory = [];
+            localStorage.removeItem(LS_KEY_CONVERT);
+            localStorage.removeItem(LS_KEY_CALC);
+        },
+    },
+    mounted() {
+        this.loadBases();
+        this.$nextTick(() => this.moveGlow());
+        window.addEventListener('resize', () => this.moveGlow());
+    },
+}).mount('#app');
+</script>
+
+</body>
+</html>
