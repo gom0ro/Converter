@@ -239,31 +239,6 @@
             transform: rotate(180deg);
         }
 
-        .theme-toggle {
-            position: fixed;
-            top: 14px;
-            right: 14px;
-            z-index: 120;
-            width: 42px;
-            height: 42px;
-            border-radius: 50%;
-            border: 1px solid var(--border);
-            background: var(--panel);
-            color: var(--text);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.25s;
-            backdrop-filter: blur(8px);
-        }
-
-        .theme-toggle:hover {
-            border-color: var(--accent);
-            color: var(--accent);
-            box-shadow: 0 4px 18px rgba(240,219,79,0.25);
-        }
-
         .hist-actions {
             display: flex;
             gap: 10px;
@@ -546,93 +521,11 @@
             color: var(--muted);
             font-size: 0.95rem;
         }
-
-        /* ===== Light theme ===== */
-        body.light {
-            --bg: #eef0f6;
-            --panel: rgba(30, 40, 70, 0.06);
-            --border: rgba(30, 40, 70, 0.14);
-            --text: #1c2233;
-            --muted: #5a6478;
-            background: linear-gradient(135deg, #e9ecf4, #ffffff, #e9ecf4);
-            color: var(--text);
-        }
-
-        body.light input, body.light select {
-            background: rgba(255, 255, 255, 0.85);
-            color: var(--text);
-        }
-
-        body.light select option { background: #ffffff; color: #1c2233; }
-
-        body.light .card { background: rgba(255, 255, 255, 0.75); }
-
-        body.light .keypad .key {
-            background: rgba(255, 255, 255, 0.8);
-            color: var(--text);
-            border-color: rgba(30, 40, 70, 0.15);
-        }
-
-        body.light .keypad .key:hover {
-            border-color: #c9a700;
-            color: #8a6d00;
-        }
-
-        body.light .steps { background: rgba(0, 0, 0, 0.06); }
-
-        body.light .history-item { background: rgba(255, 255, 255, 0.7); }
-
-        body.light .result-card { background: rgba(240, 219, 79, 0.18); }
-
-        body.light .tabbar {
-            background: rgba(255, 255, 255, 0.72);
-            border-top-color: rgba(30, 40, 70, 0.12);
-            box-shadow: 0 -14px 44px rgba(30, 40, 70, 0.16);
-        }
-
-        body.light .tabbar-inner {
-            background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.55));
-            border-color: rgba(30, 40, 70, 0.12);
-        }
-
-        body.light .tabbar-glow {
-            background: linear-gradient(180deg, rgba(240, 219, 79, 0.65), rgba(240, 219, 79, 0.35));
-            border-color: rgba(200, 170, 30, 0.4);
-        }
-
-        body.light .tabbar-item:hover { color: #1c2233; }
-
-        body.light .tabbar-item.active { color: #1c2233; }
-
-        body.light .tabbar-icon { filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1)); }
-
-        body.light .btn { color: #1a1a24; }
-
-        body.light .theme-toggle { background: rgba(255, 255, 255, 0.8); }
-
-        body.light .spinner { border-color: rgba(30, 40, 70, 0.15); }
     </style>
 </head>
 <body>
 
 <div id="app" v-cloak>
-    <button class="theme-toggle" @click="toggleTheme" :title="theme === 'light' ? 'Тёмная тема' : 'Светлая тема'">
-        <svg v-if="theme === 'dark'" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="5"></circle>
-            <line x1="12" y1="1" x2="12" y2="3"></line>
-            <line x1="12" y1="21" x2="12" y2="23"></line>
-            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-            <line x1="1" y1="12" x2="3" y2="12"></line>
-            <line x1="21" y1="12" x2="23" y2="12"></line>
-            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-        </svg>
-        <svg v-else viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-        </svg>
-    </button>
-
     <div class="content">
         <div class="container">
 
@@ -851,7 +744,6 @@ const AVAILABLE_BASES = [
 const LS_KEY_CONVERT = 'numsys_convert_history';
 const LS_KEY_CALC    = 'numsys_calc_history';
 const LS_KEY_BASES   = 'numsys_bases';
-const LS_KEY_THEME   = 'numsys_theme';
 
 createApp({
     data() {
@@ -875,7 +767,6 @@ createApp({
             calcData: null,
             calcHistory: [],
             activeField: 'calcValue1',
-            theme: 'dark',
         };
     },
     computed: {
@@ -957,10 +848,7 @@ createApp({
                     if (b.to) this.toBase = b.to;
                     if (b.calcBase) this.calcBase = b.calcBase;
                 }
-                const savedTheme = localStorage.getItem(LS_KEY_THEME);
-                if (savedTheme === 'light' || savedTheme === 'dark') this.theme = savedTheme;
             } catch (e) { /* ignore corrupted localStorage */ }
-            this.applyTheme();
         },
         clearError() {
             this.convertError = '';
@@ -1004,14 +892,6 @@ createApp({
             this.fromBase = this.toBase;
             this.toBase = t;
             this.savePrefs();
-        },
-        applyTheme() {
-            document.body.classList.toggle('light', this.theme === 'light');
-        },
-        toggleTheme() {
-            this.theme = this.theme === 'light' ? 'dark' : 'light';
-            this.applyTheme();
-            localStorage.setItem(LS_KEY_THEME, this.theme);
         },
         onKeydown(e) {
             const tag = e.target && e.target.tagName;
