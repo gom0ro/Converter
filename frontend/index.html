@@ -2,8 +2,15 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Конвертер систем счисления</title>
+    <meta name="description" content="Перевод чисел между системами счисления и арифметика в любой системе">
+    <meta name="theme-color" content="#1a1a24">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
     <script src="vue.global.prod.js"></script>
     <style>
         :root {
@@ -202,6 +209,82 @@
         .keypad .key.key-clear {
             color: #ff6b6b;
             max-width: 64px;
+        }
+
+        .keypad .key.key-minus {
+            color: var(--accent);
+            max-width: 64px;
+        }
+
+        .swap-wrap {
+            display: flex;
+            justify-content: center;
+            margin-top: 12px;
+        }
+
+        .swap-btn {
+            padding: 8px 22px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: var(--panel);
+            color: var(--accent);
+            font-size: 1.05rem;
+            cursor: pointer;
+            transition: all 0.25s;
+            font-weight: 700;
+        }
+
+        .swap-btn:hover {
+            border-color: var(--accent);
+            transform: rotate(180deg);
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 14px;
+            right: 14px;
+            z-index: 120;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            background: var(--panel);
+            color: var(--text);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.25s;
+            backdrop-filter: blur(8px);
+        }
+
+        .theme-toggle:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            box-shadow: 0 4px 18px rgba(240,219,79,0.25);
+        }
+
+        .hist-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 16px 0;
+        }
+
+        .btn-ghost {
+            padding: 10px 16px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: transparent;
+            color: var(--text);
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.25s;
+        }
+
+        .btn-ghost:hover {
+            border-color: var(--accent);
+            color: var(--accent);
         }
 
         .result-card {
@@ -463,11 +546,93 @@
             color: var(--muted);
             font-size: 0.95rem;
         }
+
+        /* ===== Light theme ===== */
+        body.light {
+            --bg: #eef0f6;
+            --panel: rgba(30, 40, 70, 0.06);
+            --border: rgba(30, 40, 70, 0.14);
+            --text: #1c2233;
+            --muted: #5a6478;
+            background: linear-gradient(135deg, #e9ecf4, #ffffff, #e9ecf4);
+            color: var(--text);
+        }
+
+        body.light input, body.light select {
+            background: rgba(255, 255, 255, 0.85);
+            color: var(--text);
+        }
+
+        body.light select option { background: #ffffff; color: #1c2233; }
+
+        body.light .card { background: rgba(255, 255, 255, 0.75); }
+
+        body.light .keypad .key {
+            background: rgba(255, 255, 255, 0.8);
+            color: var(--text);
+            border-color: rgba(30, 40, 70, 0.15);
+        }
+
+        body.light .keypad .key:hover {
+            border-color: #c9a700;
+            color: #8a6d00;
+        }
+
+        body.light .steps { background: rgba(0, 0, 0, 0.06); }
+
+        body.light .history-item { background: rgba(255, 255, 255, 0.7); }
+
+        body.light .result-card { background: rgba(240, 219, 79, 0.18); }
+
+        body.light .tabbar {
+            background: rgba(255, 255, 255, 0.72);
+            border-top-color: rgba(30, 40, 70, 0.12);
+            box-shadow: 0 -14px 44px rgba(30, 40, 70, 0.16);
+        }
+
+        body.light .tabbar-inner {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.55));
+            border-color: rgba(30, 40, 70, 0.12);
+        }
+
+        body.light .tabbar-glow {
+            background: linear-gradient(180deg, rgba(240, 219, 79, 0.65), rgba(240, 219, 79, 0.35));
+            border-color: rgba(200, 170, 30, 0.4);
+        }
+
+        body.light .tabbar-item:hover { color: #1c2233; }
+
+        body.light .tabbar-item.active { color: #1c2233; }
+
+        body.light .tabbar-icon { filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1)); }
+
+        body.light .btn { color: #1a1a24; }
+
+        body.light .theme-toggle { background: rgba(255, 255, 255, 0.8); }
+
+        body.light .spinner { border-color: rgba(30, 40, 70, 0.15); }
     </style>
 </head>
 <body>
 
 <div id="app" v-cloak>
+    <button class="theme-toggle" @click="toggleTheme" :title="theme === 'light' ? 'Тёмная тема' : 'Светлая тема'">
+        <svg v-if="theme === 'dark'" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+        <svg v-else viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+    </button>
+
     <div class="content">
         <div class="container">
 
@@ -482,7 +647,7 @@
                     </div>
                     <div>
                         <label>Из системы</label>
-                        <select v-model.number="fromBase">
+                        <select v-model.number="fromBase" @change="savePrefs">
                             <option v-for="b in bases" :key="b.base" :value="b.base">
                                 {{ b.base }} — {{ b.name }}
                             </option>
@@ -490,16 +655,20 @@
                     </div>
                     <div>
                         <label>В систему</label>
-                        <select v-model.number="toBase">
+                        <select v-model.number="toBase" @change="savePrefs">
                             <option v-for="b in bases" :key="b.base" :value="b.base">
                                 {{ b.base }} — {{ b.name }}
                             </option>
                         </select>
                     </div>
                 </div>
+                <div class="swap-wrap">
+                    <button class="swap-btn" @click="swapBases" title="Поменять местами">⇄</button>
+                </div>
                 <div class="error-msg">{{ convertError }}</div>
                 <div class="keypad">
                     <button v-for="k in convertKeys" :key="k" class="key" @click="pressConvert(k)">{{ k }}</button>
+                    <button class="key key-minus" @click="pressConvert('MINUS')">−</button>
                     <button class="key key-del" @click="pressConvert('BACK')">⌫</button>
                     <button class="key key-clear" @click="pressConvert('CLEAR')">C</button>
                 </div>
@@ -552,7 +721,7 @@
                 </div>
                 <div style="margin-top:14px">
                     <label>Система счисления</label>
-                    <select v-model.number="calcBase">
+                    <select v-model.number="calcBase" @change="savePrefs">
                         <option v-for="b in bases" :key="b.base" :value="b.base">
                             {{ b.base }} — {{ b.name }}
                         </option>
@@ -561,6 +730,7 @@
                 <div class="error-msg">{{ calcError }}</div>
                 <div class="keypad">
                     <button v-for="k in calcKeys" :key="k" class="key" @click="pressCalc(k)">{{ k }}</button>
+                    <button class="key key-minus" @click="pressCalc('MINUS')">−</button>
                     <button class="key key-del" @click="pressCalc('BACK')">⌫</button>
                     <button class="key key-clear" @click="pressCalc('CLEAR')">C</button>
                 </div>
@@ -576,6 +746,9 @@
                 <div class="result-meta">
                     <span>{{ calcData.value1 }} {{ opSymbol(calcData.operation) }} {{ calcData.value2 }} = {{ calcData.result_decimal }} (дес.)</span>
                     <span>{{ calcData.result }} ({{ calcData.base }})</span>
+                </div>
+                <div class="steps" v-if="calcData.steps">
+                    <div class="step" v-for="(s, i) in calcData.steps" :key="i" :class="{tail: i === calcData.steps.length - 1}">{{ s }}</div>
                 </div>
             </div>
 
@@ -593,6 +766,12 @@
         <div v-if="tab === 'history'">
             <div class="card">
                 <h2>История действий</h2>
+
+                <div class="hist-actions">
+                    <button class="btn-ghost" @click="exportHistory">Экспорт JSON</button>
+                    <button class="btn-ghost" @click="triggerImport">Импорт JSON</button>
+                    <input type="file" ref="fileInput" accept=".json,application/json" style="display:none" @change="importHistory">
+                </div>
 
                 <div class="empty-history" v-if="!allHistory.length">
                     Пока нет записей — выполните конвертацию или вычисление.
@@ -671,6 +850,8 @@ const AVAILABLE_BASES = [
 
 const LS_KEY_CONVERT = 'numsys_convert_history';
 const LS_KEY_CALC    = 'numsys_calc_history';
+const LS_KEY_BASES   = 'numsys_bases';
+const LS_KEY_THEME   = 'numsys_theme';
 
 createApp({
     data() {
@@ -694,6 +875,7 @@ createApp({
             calcData: null,
             calcHistory: [],
             activeField: 'calcValue1',
+            theme: 'dark',
         };
     },
     computed: {
@@ -768,22 +950,142 @@ createApp({
                 if (savedConvert) this.convertHistory = JSON.parse(savedConvert);
                 const savedCalc = localStorage.getItem(LS_KEY_CALC);
                 if (savedCalc) this.calcHistory = JSON.parse(savedCalc);
+                const savedBases = localStorage.getItem(LS_KEY_BASES);
+                if (savedBases) {
+                    const b = JSON.parse(savedBases);
+                    if (b.from) this.fromBase = b.from;
+                    if (b.to) this.toBase = b.to;
+                    if (b.calcBase) this.calcBase = b.calcBase;
+                }
+                const savedTheme = localStorage.getItem(LS_KEY_THEME);
+                if (savedTheme === 'light' || savedTheme === 'dark') this.theme = savedTheme;
             } catch (e) { /* ignore corrupted localStorage */ }
+            this.applyTheme();
         },
         clearError() {
             this.convertError = '';
         },
         pressConvert(k) {
+            this.vibrate();
             if (k === 'BACK') { this.inputValue = this.inputValue.slice(0, -1); this.clearError(); return; }
             if (k === 'CLEAR') { this.inputValue = ''; this.clearError(); return; }
-            this.inputValue += k;
-            this.clearError();
+            if (k === 'MINUS') { this.inputValue = this.toggleSign(this.inputValue); this.clearError(); return; }
+            if (this.convertKeys.includes(k)) {
+                this.inputValue += k;
+                this.clearError();
+            }
         },
         pressCalc(k) {
+            this.vibrate();
             if (k === 'BACK') { this[this.activeField] = this[this.activeField].slice(0, -1); this.calcError = ''; return; }
             if (k === 'CLEAR') { this[this.activeField] = ''; this.calcError = ''; return; }
-            this[this.activeField] += k;
-            this.calcError = '';
+            if (k === 'MINUS') { this[this.activeField] = this.toggleSign(this[this.activeField]); this.calcError = ''; return; }
+            if (this.calcKeys.includes(k)) {
+                this[this.activeField] += k;
+                this.calcError = '';
+            }
+        },
+        toggleSign(value) {
+            return value && value[0] === '-' ? value.slice(1) : '-' + value;
+        },
+        vibrate() {
+            if (navigator.vibrate) navigator.vibrate(8);
+        },
+        savePrefs() {
+            localStorage.setItem(LS_KEY_BASES, JSON.stringify({
+                from: this.fromBase,
+                to: this.toBase,
+                calcBase: this.calcBase,
+            }));
+        },
+        swapBases() {
+            this.vibrate();
+            const t = this.fromBase;
+            this.fromBase = this.toBase;
+            this.toBase = t;
+            this.savePrefs();
+        },
+        applyTheme() {
+            document.body.classList.toggle('light', this.theme === 'light');
+        },
+        toggleTheme() {
+            this.theme = this.theme === 'light' ? 'dark' : 'light';
+            this.applyTheme();
+            localStorage.setItem(LS_KEY_THEME, this.theme);
+        },
+        onKeydown(e) {
+            const tag = e.target && e.target.tagName;
+            if (tag === 'SELECT' || tag === 'TEXTAREA' || (tag === 'INPUT' && e.target.readOnly === false)) return;
+            if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (this.tab === 'convert') this.convert();
+                else if (this.tab === 'calc') this.calcArithmetic();
+                return;
+            }
+            if (e.key === 'Backspace') {
+                e.preventDefault();
+                if (this.tab === 'convert') this.pressConvert('BACK');
+                else if (this.tab === 'calc') this.pressCalc('BACK');
+                return;
+            }
+            if (e.key === 'Escape') {
+                if (this.tab === 'convert') this.pressConvert('CLEAR');
+                else if (this.tab === 'calc') this.pressCalc('CLEAR');
+                return;
+            }
+            if (e.key === '-' || e.key === '−' || e.key === '‐' || e.key === '–') {
+                e.preventDefault();
+                if (this.tab === 'convert') this.pressConvert('MINUS');
+                else if (this.tab === 'calc') this.pressCalc('MINUS');
+                return;
+            }
+            const ch = e.key.toUpperCase();
+            if (ch.length !== 1 || !/[0-9A-Z]/.test(ch)) return;
+            if (this.tab === 'convert') this.pressConvert(ch);
+            else if (this.tab === 'calc') this.pressCalc(ch);
+        },
+        exportHistory() {
+            const payload = {
+                exportedAt: new Date().toISOString(),
+                convert: this.convertHistory,
+                calc: this.calcHistory,
+            };
+            const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `numsys-history-${Date.now()}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        },
+        triggerImport() {
+            this.$refs.fileInput.click();
+        },
+        importHistory(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                try {
+                    const data = JSON.parse(ev.target.result);
+                    if (Array.isArray(data.convert)) {
+                        this.convertHistory = data.convert;
+                        localStorage.setItem(LS_KEY_CONVERT, JSON.stringify(this.convertHistory));
+                    }
+                    if (Array.isArray(data.calc)) {
+                        this.calcHistory = data.calc;
+                        localStorage.setItem(LS_KEY_CALC, JSON.stringify(this.calcHistory));
+                    }
+                } catch (err) {
+                    alert('Не удалось прочитать файл: ' + err.message);
+                }
+                e.target.value = '';
+            };
+            reader.readAsText(file);
         },
         async convert() {
             this.convertError = '';
@@ -822,6 +1124,7 @@ createApp({
             this.inputValue = item.input;
             this.fromBase = item.from;
             this.toBase = item.to;
+            this.savePrefs();
         },
         async calcArithmetic() {
             this.calcError = '';
@@ -893,6 +1196,12 @@ createApp({
         this.loadBases();
         this.$nextTick(() => this.moveGlow());
         window.addEventListener('resize', () => this.moveGlow());
+        window.addEventListener('keydown', this.onKeydown);
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').catch(() => {});
+            });
+        }
     },
 }).mount('#app');
 </script>

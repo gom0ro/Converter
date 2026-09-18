@@ -78,13 +78,19 @@ def parse_number(value: str, base: int) -> int:
     value = value.strip().upper()
     if not value:
         raise ValueError("Пустое значение")
+    neg = False
+    if value.startswith("-"):
+        neg = True
+        value = value[1:]
+    if not value:
+        raise ValueError("Пустое значение")
     result = 0
     for ch in value:
         idx = VALID_DIGITS.find(ch)
         if idx == -1 or idx >= base:
             raise ValueError(f"Символ '{ch}' недопустим для системы счисления с основанием {base}")
         result = result * base + idx
-    return result
+    return -result if neg else result
 
 
 def to_base_string(number: int, base: int) -> str:
@@ -105,8 +111,10 @@ def build_steps(value: str, from_base: int, to_base: int) -> list[str]:
     steps = []
     value_upper = value.strip().upper()
     decimal = parse_number(value_upper, from_base)
+    sign_text = "Отрицательное число (знак −)" if decimal < 0 else "Положительное число"
 
     steps.append(f"Входное число: {value_upper} (система {from_base})")
+    steps.append(f"{sign_text}")
 
     if from_base == 10:
         steps.append(f"Десятичное значение: {decimal}")
@@ -116,7 +124,7 @@ def build_steps(value: str, from_base: int, to_base: int) -> list[str]:
     if to_base == 10:
         steps.append(f"Результат в десятичной: {decimal}")
     else:
-        n = decimal
+        n = abs(decimal)
         remainders = []
         while n > 0:
             rem = n % to_base
@@ -205,6 +213,7 @@ class ArithmeticResponse(BaseModel):
     operation: str
     result_decimal: int
     result: str
+    steps: list[str]
 
 
 @app.post("/api/calculate", response_model=ArithmeticResponse)
@@ -218,6 +227,10 @@ def calculate(req: ArithmeticRequest):
             raise HTTPException(status_code=400, detail=f"Операция '{req.operation}' не поддерживается")
 
         res = ops[req.operation]
+        steps = build_calc_steps(
+            req.value1.strip().upper(), req.value2.strip().upper(),
+            req.base, req.operation, a, b, res,
+        )
         return ArithmeticResponse(
             value1=req.value1.strip().upper(),
             value2=req.value2.strip().upper(),
@@ -225,6 +238,36 @@ def calculate(req: ArithmeticRequest):
             operation=req.operation,
             result_decimal=res,
             result=to_base_string(res, req.base),
+            steps=steps,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+def build_calc_steps(value1: str, value2: str, base: int, operation: str, a: int, b: int, res: int) -> list[str]:
+    op_symbols = {"add": "+", "subtract": "−", "multiply": "×"}
+    symbol = op_symbols.get(operation, operation)
+    steps = []
+
+    steps.append(f"Первое число: {value1}")
+    steps.append(f"  {value1} (система {base}) = {a} в десятичной")
+    steps.append(f"Второе число: {value2}")
+    steps.append(f"  {value2} (система {base}) = {b} в десятичной")
+
+    steps.append(f"Операция в десятичной: {a} {symbol} {b} = {res}")
+
+    if base == 10:
+        steps.append(f"Результат в десятичной: {res}")
+    else:
+        n = abs(res)
+        remainders = []
+        while n > 0:
+            rem = n % base
+            remainders.append(f"{n} ÷ {base} = {n // base}  остаток {rem} ({VALID_DIGITS[rem]})")
+            n //= base
+        steps.append("Переводим результат в целевую систему:")
+        for r in remainders:
+            steps.append(f"  {r}")
+        steps.append(f"Читаем остатки снизу вверх → {to_base_string(res, base)} (система {base})")
+
+    return steps
