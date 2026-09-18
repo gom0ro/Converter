@@ -150,6 +150,60 @@
             min-height: 1em;
         }
 
+        input.readonly-display {
+            cursor: pointer;
+        }
+
+        input.active-field {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(240,219,79,0.15);
+        }
+
+        .keypad {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 16px;
+            justify-content: center;
+        }
+
+        .keypad .key {
+            flex: 1 1 56px;
+            min-width: 56px;
+            max-width: 76px;
+            padding: 14px 0;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: rgba(255,255,255,0.07);
+            color: var(--text);
+            font-size: 1.05rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Consolas', monospace;
+            text-align: center;
+        }
+
+        .keypad .key:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .keypad .key:active {
+            transform: scale(0.92);
+            background: rgba(240,219,79,0.18);
+        }
+
+        .keypad .key.key-del {
+            color: #ff8c5a;
+            max-width: 64px;
+        }
+
+        .keypad .key.key-clear {
+            color: #ff6b6b;
+            max-width: 64px;
+        }
+
         .result-card {
             margin-top: 20px;
             background: rgba(240,219,79,0.08);
@@ -414,10 +468,6 @@
 <body>
 
 <div id="app" v-cloak>
-    <div class="header">
-        <h1>Системы счисления</h1>
-    </div>
-
     <div class="content">
         <div class="container">
 
@@ -428,7 +478,7 @@
                 <div class="grid-3">
                     <div>
                         <label>Число</label>
-                        <input v-model="inputValue" :class="{invalid: convertError}" placeholder="e.g. 1010" @input="clearError">
+                        <input v-model="inputValue" readonly class="readonly-display active-field" :class="{invalid: convertError}" placeholder="e.g. 1010" @input="clearError">
                     </div>
                     <div>
                         <label>Из системы</label>
@@ -448,6 +498,11 @@
                     </div>
                 </div>
                 <div class="error-msg">{{ convertError }}</div>
+                <div class="keypad">
+                    <button v-for="k in convertKeys" :key="k" class="key" @click="pressConvert(k)">{{ k }}</button>
+                    <button class="key key-del" @click="pressConvert('BACK')">⌫</button>
+                    <button class="key key-clear" @click="pressConvert('CLEAR')">C</button>
+                </div>
                 <button class="btn" @click="convert" :disabled="converting">{{ converting ? 'Переводим...' : 'Перевести' }}</button>
             </div>
 
@@ -480,11 +535,11 @@
                 <div class="grid-3">
                     <div>
                         <label>Первое число</label>
-                        <input v-model="calcValue1" placeholder="e.g. FF" :class="{invalid: calcError}">
+                        <input v-model="calcValue1" readonly class="readonly-display" :class="{invalid: calcError, 'active-field': activeField === 'calcValue1'}" placeholder="e.g. FF" @click="activeField = 'calcValue1'" @focus="activeField = 'calcValue1'">
                     </div>
                     <div>
                         <label>Второе число</label>
-                        <input v-model="calcValue2" placeholder="e.g. 1" :class="{invalid: calcError}">
+                        <input v-model="calcValue2" readonly class="readonly-display" :class="{invalid: calcError, 'active-field': activeField === 'calcValue2'}" placeholder="e.g. 1" @click="activeField = 'calcValue2'" @focus="activeField = 'calcValue2'">
                     </div>
                     <div>
                         <label>Операция</label>
@@ -504,6 +559,11 @@
                     </select>
                 </div>
                 <div class="error-msg">{{ calcError }}</div>
+                <div class="keypad">
+                    <button v-for="k in calcKeys" :key="k" class="key" @click="pressCalc(k)">{{ k }}</button>
+                    <button class="key key-del" @click="pressCalc('BACK')">⌫</button>
+                    <button class="key key-clear" @click="pressCalc('CLEAR')">C</button>
+                </div>
                 <button class="btn" @click="calcArithmetic" :disabled="calcRunning">{{ calcRunning ? 'Считаем...' : 'Вычислить' }}</button>
             </div>
 
@@ -633,9 +693,18 @@ createApp({
             calcRunning: false,
             calcData: null,
             calcHistory: [],
+            activeField: 'calcValue1',
         };
     },
     computed: {
+        convertKeys() {
+            const b = AVAILABLE_BASES.find(x => x.base === this.fromBase);
+            return b ? b.digits.split('') : [];
+        },
+        calcKeys() {
+            const b = AVAILABLE_BASES.find(x => x.base === this.calcBase);
+            return b ? b.digits.split('') : [];
+        },
         allHistory() {
             const items = [];
             this.convertHistory.forEach(h => items.push({
@@ -703,6 +772,18 @@ createApp({
         },
         clearError() {
             this.convertError = '';
+        },
+        pressConvert(k) {
+            if (k === 'BACK') { this.inputValue = this.inputValue.slice(0, -1); this.clearError(); return; }
+            if (k === 'CLEAR') { this.inputValue = ''; this.clearError(); return; }
+            this.inputValue += k;
+            this.clearError();
+        },
+        pressCalc(k) {
+            if (k === 'BACK') { this[this.activeField] = this[this.activeField].slice(0, -1); this.calcError = ''; return; }
+            if (k === 'CLEAR') { this[this.activeField] = ''; this.calcError = ''; return; }
+            this[this.activeField] += k;
+            this.calcError = '';
         },
         async convert() {
             this.convertError = '';
